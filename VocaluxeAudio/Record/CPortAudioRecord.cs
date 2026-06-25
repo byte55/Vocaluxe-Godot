@@ -33,8 +33,8 @@ namespace VocaluxeAudio.Record
         private bool _PaInitialized;
         private readonly List<Stream> _Streams = new List<Stream>();
 
-        // Keep a reference so the GC does not collect the delegate while native code holds it.
-        private Stream.Callback _Callback;
+        // Keep references so the GC does not collect the delegates while native code holds them.
+        private readonly List<Stream.Callback> _Callbacks = new List<Stream.Callback>();
 
         public override bool Init()
         {
@@ -48,7 +48,6 @@ namespace VocaluxeAudio.Record
                 PortAudio.LoadNativeLibrary();
                 PortAudio.Initialize();
                 _PaInitialized = true;
-                _Callback = _OnData;
 
                 var count = PortAudio.DeviceCount;
                 for (var i = 0; i < count; i++)
@@ -148,7 +147,12 @@ namespace VocaluxeAudio.Record
 
                 try
                 {
-                    var stream = new Stream(inParams, null, 44100, 882, StreamFlags.NoFlag, _Callback, new IntPtr(dev));
+                    // Per-device closure over `device`; avoids PortAudioSharp2's object-userData marshalling
+                    // (it hands the callback a GCHandle pointer, not our value).
+                    Stream.Callback cb = (IntPtr input, IntPtr output, uint frameCount,
+                        ref StreamCallbackTimeInfo ti, StreamCallbackFlags flags, IntPtr userData) => _OnData(device, input, frameCount);
+                    _Callbacks.Add(cb);
+                    var stream = new Stream(inParams, null, 44100, 882, StreamFlags.NoFlag, cb, null);
                     stream.Start();
                     _Streams.Add(stream);
                 }
@@ -183,6 +187,7 @@ namespace VocaluxeAudio.Record
             }
 
             _Streams.Clear();
+            _Callbacks.Clear();
             return true;
         }
 
@@ -213,14 +218,12 @@ namespace VocaluxeAudio.Record
             GC.SuppressFinalize(this);
         }
 
-        private StreamCallbackResult _OnData(IntPtr input, IntPtr output, uint frameCount,
-            ref StreamCallbackTimeInfo timeInfo, StreamCallbackFlags statusFlags, IntPtr userDataPtr)
+        private StreamCallbackResult _OnData(CRecordDevice device, IntPtr input, uint frameCount)
         {
             try
             {
                 if (frameCount > 0 && input != IntPtr.Zero)
                 {
-                    var device = _Devices[userDataPtr.ToInt32()];
                     var numBytes = (int)frameCount * device.Channels * 2;
                     var recBuffer = new byte[numBytes];
                     Marshal.Copy(input, recBuffer, 0, numBytes);

@@ -16,40 +16,105 @@
 #endregion
 
 using System;
+using System.IO;
 using System.Text.RegularExpressions;
 
 namespace VocaluxeCore.Log
 {
     /// <summary>
-    ///     Minimal portable logging shim mirroring the API surface that the ported song code uses
-    ///     (CLog.Warning/Error, CLog.CSongLog.*, CLog.Params). Sinks default to null (silent), so the
-    ///     library is side-effect free unless a host wires them up.
+    ///     Portable logger. Writes timestamped, levelled lines to a log file (thread-safe, so the
+    ///     PortAudio capture thread can log too) and optionally echoes to host sinks (e.g. the Godot
+    ///     console). Also serves the structured API the ported song code expects (CSongLog, Params).
     /// </summary>
     public static class CLog
     {
+        // Optional host echoes (e.g. wire to GD.Print / GD.PrintErr).
+        public static Action<string> InfoSink;
         public static Action<string> WarningSink;
         public static Action<string> ErrorSink;
 
         public static readonly CCategoryLog CSongLog = new CCategoryLog();
+
+        private static readonly object _Lock = new object();
+        private static StreamWriter _Writer;
+
+        /// <summary>Open (or replace) the log file at the given path.</summary>
+        public static void InitFile(string path)
+        {
+            lock (_Lock)
+            {
+                try
+                {
+                    _Writer?.Dispose();
+                    var dir = Path.GetDirectoryName(path);
+                    if (!string.IsNullOrEmpty(dir))
+                    {
+                        Directory.CreateDirectory(dir);
+                    }
+
+                    _Writer = new StreamWriter(path, false) { AutoFlush = true };
+                    _Write("INFO", "log started: " + path);
+                }
+                catch
+                {
+                    _Writer = null;
+                }
+            }
+        }
+
+        public static void Close()
+        {
+            lock (_Lock)
+            {
+                _Writer?.Dispose();
+                _Writer = null;
+            }
+        }
 
         public static object[] Params(params object[] values)
         {
             return values ?? new object[0];
         }
 
+        public static void Debug(string template, object[] args = null)
+        {
+            _Write("DEBUG", Format(template, args));
+        }
+
+        public static void Info(string template, object[] args = null)
+        {
+            var msg = Format(template, args);
+            _Write("INFO", msg);
+            InfoSink?.Invoke(msg);
+        }
+
         public static void Warning(string template, object[] args = null)
         {
-            WarningSink?.Invoke(Format(template, args));
+            var msg = Format(template, args);
+            _Write("WARN", msg);
+            WarningSink?.Invoke(msg);
         }
 
         public static void Error(string template, object[] args = null)
         {
-            ErrorSink?.Invoke(Format(template, args));
+            var msg = Format(template, args);
+            _Write("ERROR", msg);
+            ErrorSink?.Invoke(msg);
         }
 
         public static void Error(Exception e, string template, object[] args = null)
         {
-            ErrorSink?.Invoke(Format(template, args) + " :: " + e.Message);
+            var msg = Format(template, args) + " :: " + e;
+            _Write("ERROR", msg);
+            ErrorSink?.Invoke(msg);
+        }
+
+        private static void _Write(string level, string msg)
+        {
+            lock (_Lock)
+            {
+                _Writer?.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] [{level}] {msg}");
+            }
         }
 
         private static readonly Regex _Token = new Regex(@"\{[^{}]+\}");
@@ -67,6 +132,11 @@ namespace VocaluxeCore.Log
 
         public class CCategoryLog
         {
+            public void Debug(string template, object[] args = null)
+            {
+                CLog.Debug(template, args);
+            }
+
             public void Warning(string template, object[] args = null)
             {
                 CLog.Warning(template, args);

@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using Godot;
 using VocaluxeCore.Game;
+using VocaluxeCore.Log;
 using VocaluxeCore.Songs;
 using VocaluxeAudio.Record;
 
@@ -45,8 +46,17 @@ namespace Vocaluxe
         private bool _PlayerToneValid;
         private float _MaxVol;
 
+        private int _Frame;
+
         public override void _Ready()
         {
+            // File logger (read back after a run) + echo warnings/errors to the Godot console.
+            var repoRoot = Path.GetFullPath(Path.Combine(ProjectSettings.GlobalizePath("res://"), ".."));
+            CLog.InitFile(Path.Combine(repoRoot, "vocaluxe.log"));
+            CLog.ErrorSink = s => GD.PrintErr("[audio] " + s);
+            CLog.WarningSink = s => GD.Print("[audio] " + s);
+            CLog.Info("SingScreen start");
+
             try
             {
                 var songsRoot = Path.GetFullPath(Path.Combine(ProjectSettings.GlobalizePath("res://"), "..", "songs"));
@@ -86,12 +96,12 @@ namespace Vocaluxe
 
                     dev ??= _Record.DefaultInputDevice();
 
-                    GD.Print($"Input devices ({devices?.Count ?? 0}):");
+                    CLog.Info($"Input devices ({devices?.Count ?? 0}):");
                     if (devices != null)
                     {
                         foreach (var d in devices)
                         {
-                            GD.Print($"  '{d.Name}' (ch {d.Channels}){(d == dev ? "   <-- assigned to player 1" : "")}");
+                            CLog.Info($"  '{d.Name}' (ch {d.Channels}){(d == dev ? "   <-- assigned to player 1" : "")}");
                         }
                     }
 
@@ -100,7 +110,12 @@ namespace Vocaluxe
                         _MicName = dev.Name;
                         dev.PlayerChannel[0] = 1; // channel 0 -> player 1
                         _Record.SetVolumeThreshold(Player, VolumeThreshold);
-                        _Record.Start();
+                        if (!_Record.Start())
+                        {
+                            _Error = "Mic stream failed to start (see [audio] log).";
+                        }
+
+                        CLog.Info($"Capturing '{_MicName}' for player 1 (threshold {VolumeThreshold}).");
                     }
                     else
                     {
@@ -113,6 +128,18 @@ namespace Vocaluxe
                 }
 
                 _Audio.Play();
+
+                // Skip the (often long) instrumental intro: start ~1.5s before the first note so notes
+                // and scoring are visible immediately instead of after the song's GAP.
+                if (_Voice != null && _Voice.Lines.Length > 0)
+                {
+                    var firstNoteTime = CGame.GetTimeFromBeats(_Voice.Lines[0].FirstNoteBeat, _Song.Bpm) + _Song.Gap - 1.5f;
+                    if (firstNoteTime > 0.5f)
+                    {
+                        _Audio.Seek(firstNoteTime);
+                        CLog.Info($"Seek to {firstNoteTime:0.0}s (first note ~beat {_Voice.Lines[0].FirstNoteBeat}, gap {_Song.Gap:0.0}s).");
+                    }
+                }
             }
             catch (Exception e)
             {
@@ -143,12 +170,19 @@ namespace Vocaluxe
                 _Scorer?.Update(recordedBeat, _PlayerToneValid, _PlayerTone);
             }
 
+            if (++_Frame % 30 == 0)
+            {
+                CLog.Info($"t={time:0.0} beat={_BeatF:0.0} valid={_PlayerToneValid} tone={_PlayerTone} vol={_MaxVol:0.0000} score={_Scorer?.Score.Points ?? 0:0}");
+            }
+
             QueueRedraw();
         }
 
         public override void _ExitTree()
         {
             _Record?.Close();
+            CLog.Info("SingScreen exit");
+            CLog.Close();
         }
 
         private static readonly Color CColPlayer = new Color(0.0f, 0.58f, 0.79f);
@@ -159,7 +193,7 @@ namespace Vocaluxe
         public override void _Draw()
         {
             var font = GetThemeDefaultFont();
-            var size = Size;
+            var size = GetViewportRect().Size;
             DrawRect(new Rect2(Vector2.Zero, size), new Color(0.07f, 0.08f, 0.10f));
 
             if (_Song == null || _Voice == null)

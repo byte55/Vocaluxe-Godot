@@ -21,6 +21,9 @@ mono_crash.*.json
 native/**/*.o
 native/**/*.so
 
+# Runtime log
+/vocaluxe.log
+
 # OS / editor
 .DS_Store
 *.swp
