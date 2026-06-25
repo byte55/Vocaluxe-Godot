@@ -2,7 +2,10 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
-    <Nullable>enable</Nullable>
+    <!-- Nullable disabled: this library is a faithful port of legacy VocaluxeLib code
+         written without nullable annotations. New (game) code keeps nullable enabled. -->
+    <Nullable>disable</Nullable>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
 </Project>

@@ -14,6 +14,9 @@ obj/
 # but build output is not.
 mono_crash.*.json
 
+# Local test song library (copyrighted media + large video files — never commit)
+/songs/
+
 # OS / editor
 .DS_Store
 *.swp
