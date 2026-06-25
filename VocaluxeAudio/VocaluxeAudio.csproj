@@ -20,4 +20,8 @@
     <ProjectReference Include="..\VocaluxeCore\VocaluxeCore.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="PortAudioSharp2" Version="1.0.6" />
+  </ItemGroup>
+
 </Project>

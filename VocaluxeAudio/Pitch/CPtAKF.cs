@@ -16,6 +16,8 @@
 #endregion
 
 using System;
+using System.IO;
+using System.Reflection;
 using System.Runtime.InteropServices;
 
 namespace VocaluxeAudio.Pitch
@@ -26,6 +28,52 @@ namespace VocaluxeAudio.Pitch
     /// </summary>
     public class CPtAKF : CPitchTracker
     {
+        static CPtAKF()
+        {
+            // Hosts like Godot run the app with a base dir that is not the managed-assembly dir, so the
+            // default DllImport probing misses our bundled native lib. Resolve it explicitly: it sits next
+            // to this assembly (Content-copied) under the platform-specific file name.
+            NativeLibrary.SetDllImportResolver(typeof(CPtAKF).Assembly, _ResolveNative);
+        }
+
+        private static IntPtr _ResolveNative(string libraryName, Assembly assembly, DllImportSearchPath? searchPath)
+        {
+            if (libraryName != NativeLib)
+            {
+                return IntPtr.Zero;
+            }
+
+            string fileName;
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                fileName = "PitchTracker.dll";
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                fileName = "libPitchTracker.dylib";
+            }
+            else
+            {
+                fileName = "libPitchTracker.so";
+            }
+
+            foreach (var dir in new[] { Path.GetDirectoryName(typeof(CPtAKF).Assembly.Location), AppContext.BaseDirectory })
+            {
+                if (string.IsNullOrEmpty(dir))
+                {
+                    continue;
+                }
+
+                var path = Path.Combine(dir, fileName);
+                if (File.Exists(path) && NativeLibrary.TryLoad(path, out var handle))
+                {
+                    return handle;
+                }
+            }
+
+            return IntPtr.Zero; // fall back to default OS probing
+        }
+
         #region Imports
         [DllImport(NativeLib, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr PtAKF_Create(uint step);
