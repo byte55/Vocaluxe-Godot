@@ -24,6 +24,12 @@ namespace Vocaluxe
         /// <summary>Manual audio/scoring sync offset in seconds (positive = notes later).</summary>
         [Export] public float AudioOffset = 0f;
 
+        /// <summary>
+        ///     Name (substring, case-insensitive) of the mic to assign to player 1. Falls back to the
+        ///     system default input device if not found. Empty = always use the default device.
+        /// </summary>
+        [Export] public string PreferredMicName = "QuadCast";
+
         private const int Player = 0;
 
         private CSong? _Song;
@@ -70,7 +76,25 @@ namespace Vocaluxe
                 _Record = new CPortAudioRecord();
                 if (_Record.Init())
                 {
-                    var dev = _Record.DefaultInputDevice();
+                    var devices = _Record.RecordDevices();
+
+                    CRecordDevice? dev = null;
+                    if (devices != null && !string.IsNullOrEmpty(PreferredMicName))
+                    {
+                        dev = devices.FirstOrDefault(d => d.Name.IndexOf(PreferredMicName, StringComparison.OrdinalIgnoreCase) >= 0);
+                    }
+
+                    dev ??= _Record.DefaultInputDevice();
+
+                    GD.Print($"Input devices ({devices?.Count ?? 0}):");
+                    if (devices != null)
+                    {
+                        foreach (var d in devices)
+                        {
+                            GD.Print($"  '{d.Name}' (ch {d.Channels}){(d == dev ? "   <-- assigned to player 1" : "")}");
+                        }
+                    }
+
                     if (dev != null)
                     {
                         _MicName = dev.Name;
