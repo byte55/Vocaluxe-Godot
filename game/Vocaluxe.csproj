@@ -7,5 +7,6 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\VocaluxeCore\VocaluxeCore.csproj" />
+    <ProjectReference Include="..\VocaluxeAudio\VocaluxeAudio.csproj" />
   </ItemGroup>
 </Project>

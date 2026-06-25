@@ -23,9 +23,13 @@ natively in Godot scenes. Desktop-first (Windows/Linux/macOS).
 ## Build & run
 
 ```bash
-dotnet test VocaluxeCore.Tests/VocaluxeCore.Tests.csproj   # core regression tests
-dotnet build game/Vocaluxe.csproj                          # build the Godot C# game
-godot --path game                                          # run (Godot 4.7 .NET build)
+make -C native/PitchTracker                # build the native pitch tracker (libPitchTracker.so)
+dotnet test VocaluxeGodot.sln              # core + audio regression tests
+dotnet build game/Vocaluxe.csproj          # build the Godot C# game
+godot --path game                          # run (Godot 4.7 .NET build)
 ```
+
+The native pitch tracker (`native/PitchTracker/`, C++) must be built before the audio tests
+can run; without it the pitch tests skip cleanly.
 
 GPLv3 (inherited from upstream Vocaluxe).

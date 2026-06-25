@@ -17,6 +17,10 @@ mono_crash.*.json
 # Local test song library (copyrighted media + large video files — never commit)
 /songs/
 
+# Native build artifacts (rebuild via native/PitchTracker/makefile)
+native/**/*.o
+native/**/*.so
+
 # OS / editor
 .DS_Store
 *.swp
