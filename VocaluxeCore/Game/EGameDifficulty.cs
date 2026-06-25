@@ -15,21 +15,12 @@
 // along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
-namespace VocaluxeCore
+namespace VocaluxeCore.Game
 {
-    /// <summary>
-    ///     Portable settings/constants for the core.
-    ///     (Originally these tone bounds lived on the app's CSettings and were reached via CBase.Settings.)
-    /// </summary>
-    public static class CSettings
+    public enum EGameDifficulty
     {
-        public const int ToneMin = -36;
-        public const int ToneMax = 89;
-
-        public const float DefaultMedleyFadeInTime = 8f;
-        public const float DefaultMedleyFadeOutTime = 2f;
-
-        public const int MaxScore = 10000;
-        public const int LinebonusScore = 1000;
+        TR_CONFIG_EASY,
+        TR_CONFIG_NORMAL,
+        TR_CONFIG_HARD
     }
 }

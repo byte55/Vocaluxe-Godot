@@ -15,21 +15,23 @@
 // along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
-namespace VocaluxeCore
+using System.Linq;
+
+namespace VocaluxeCore.Songs
 {
-    /// <summary>
-    ///     Portable settings/constants for the core.
-    ///     (Originally these tone bounds lived on the app's CSettings and were reached via CBase.Settings.)
-    /// </summary>
-    public static class CSettings
+    public class CSungLine : CLineBase<CSungNote>
     {
-        public const int ToneMin = -36;
-        public const int ToneMax = 89;
+        public double BonusPoints;
 
-        public const float DefaultMedleyFadeInTime = 8f;
-        public const float DefaultMedleyFadeOutTime = 2f;
+        // for drawing perfect line effect
+        public bool PerfectLine { get; set; }
 
-        public const int MaxScore = 10000;
-        public const int LinebonusScore = 1000;
+        public bool IsPerfect(CSongLine compareLine)
+        {
+            PerfectLine = _Notes.Count > 0;
+            PerfectLine &= _Notes.Count == compareLine.NoteCount;
+            PerfectLine &= _Notes.All(note => note.Perfect);
+            return PerfectLine;
+        }
     }
 }
