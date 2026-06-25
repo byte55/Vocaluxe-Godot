@@ -24,4 +24,10 @@
     <ProjectReference Include="..\VocaluxeCore\VocaluxeCore.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="TestFiles\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

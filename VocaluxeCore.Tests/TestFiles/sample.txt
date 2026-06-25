@@ -1,0 +1,14 @@
+#TITLE:Sample Song
+#ARTIST:Unit Tester
+#MP3:audio.mp3
+#BPM:120
+#GAP:1000
+#LANGUAGE:English
+#GENRE:Test, Demo
+: 0 2 5 Hel
+: 2 2 7 lo
+* 4 4 9 World
+- 12
+: 14 2 5 a
+F 16 2 0 ~
+E

@@ -15,18 +15,16 @@
 // along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
-namespace VocaluxeCore
+namespace VocaluxeCore.Songs
 {
-    /// <summary>
-    ///     Portable settings/constants for the core.
-    ///     (Originally these tone bounds lived on the app's CSettings and were reached via CBase.Settings.)
-    /// </summary>
-    public static class CSettings
+    public enum EAspect
     {
-        public const int ToneMin = -36;
-        public const int ToneMax = 89;
-
-        public const float DefaultMedleyFadeInTime = 8f;
-        public const float DefaultMedleyFadeOutTime = 2f;
+        Automatic,
+        Crop,
+        LetterBox,
+        PillarBox,
+        Stretch,
+        Zoom1,
+        Zoom2
     }
 }

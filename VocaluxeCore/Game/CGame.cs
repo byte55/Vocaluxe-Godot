@@ -15,18 +15,26 @@
 // along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
-namespace VocaluxeCore
+namespace VocaluxeCore.Game
 {
     /// <summary>
-    ///     Portable settings/constants for the core.
-    ///     (Originally these tone bounds lived on the app's CSettings and were reached via CBase.Settings.)
+    ///     Portable beat &lt;-&gt; time conversion (ported from the app's CGame). Scoring logic will grow here.
     /// </summary>
-    public static class CSettings
+    public static class CGame
     {
-        public const int ToneMin = -36;
-        public const int ToneMax = 89;
+        public static float GetBeatFromTime(float time, float bpm, float gap)
+        {
+            return bpm / 60 * (time - gap);
+        }
 
-        public const float DefaultMedleyFadeInTime = 8f;
-        public const float DefaultMedleyFadeOutTime = 2f;
+        public static float GetTimeFromBeats(float beats, float bpm)
+        {
+            if (bpm > 0f)
+            {
+                return beats / bpm * 60f;
+            }
+
+            return 0f;
+        }
     }
 }
