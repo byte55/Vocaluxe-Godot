@@ -43,9 +43,13 @@ namespace VocaluxeCore.Log
         {
             lock (_Lock)
             {
+                if (_Writer != null)
+                {
+                    return; // already logging this process (e.g. across scene switches)
+                }
+
                 try
                 {
-                    _Writer?.Dispose();
                     var dir = Path.GetDirectoryName(path);
                     if (!string.IsNullOrEmpty(dir))
                     {

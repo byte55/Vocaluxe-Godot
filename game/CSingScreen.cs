@@ -59,16 +59,21 @@ namespace Vocaluxe
             CLog.ErrorSink = s => GD.PrintErr("[audio] " + s);
             CLog.WarningSink = s => GD.Print("[audio] " + s);
             CLog.Info("SingScreen start");
-            CRecordBase.DebugChannelLevels = true; // log raw per-channel mic peaks (~1/s) for debugging
 
             try
             {
-                var songsRoot = Path.GetFullPath(Path.Combine(ProjectSettings.GlobalizePath("res://"), "..", "songs"));
-                var folder = Path.Combine(songsRoot, SongName);
-                var txt = Directory.Exists(folder) ? Directory.GetFiles(folder, "*.txt").FirstOrDefault() : null;
-                if (txt == null)
+                // Prefer the song picked on the select screen; fall back to SongName for direct launch.
+                string? txt = CSession.SelectedSongTxt;
+                if (string.IsNullOrEmpty(txt) || !File.Exists(txt))
                 {
-                    throw new Exception($"No .txt song found in {folder}");
+                    var songsRoot = Path.GetFullPath(Path.Combine(ProjectSettings.GlobalizePath("res://"), "..", "songs"));
+                    var folder = Path.Combine(songsRoot, SongName);
+                    txt = Directory.Exists(folder) ? Directory.GetFiles(folder, "*.txt").FirstOrDefault() : null;
+                }
+
+                if (string.IsNullOrEmpty(txt))
+                {
+                    throw new Exception("No song selected and no fallback song found.");
                 }
 
                 _Song = CSong.LoadSong(txt);
@@ -238,12 +243,13 @@ namespace Vocaluxe
                 li = 0;
             }
 
-            var line = lines[li];
             // Advance to the line that actually contains the current beat when between notes.
-            if (line.LastNoteBeat < curBeat && li + 1 < lines.Length)
+            if (lines[li].LastNoteBeat < curBeat && li + 1 < lines.Length)
             {
-                line = lines[li + 1];
+                li++;
             }
+
+            var line = lines[li];
 
             var notes = line.Notes;
             if (notes.Length == 0)
@@ -290,16 +296,31 @@ namespace Vocaluxe
                 DrawCircle(new Vector2(nowX, Y(_PlayerTone)), 7, CColPlayer);
             }
 
-            // Lyrics
-            DrawString(font, new Vector2(40, area.Position.Y + area.Size.Y + 50), line.Lyrics, HorizontalAlignment.Left, size.X - 80, 26, Colors.White);
-            DrawString(font, new Vector2(40, size.Y - 24), "Sing into the mic. Esc to quit.", HorizontalAlignment.Left, -1, 13, new Color(0.6f, 0.6f, 0.65f));
+            // Lyrics: current line with sung syllables highlighted, next line previewed dimmed.
+            var lyricY = area.Position.Y + area.Size.Y + 48;
+            var lx = 40f;
+            foreach (var n in notes)
+            {
+                var c = n.EndBeat < curBeat ? CColGolden        // already sung
+                    : n.StartBeat <= curBeat ? CColPlayer        // active syllable
+                    : Colors.White;                              // upcoming
+                DrawString(font, new Vector2(lx, lyricY), n.Text, HorizontalAlignment.Left, -1, 28, c);
+                lx += font.GetStringSize(n.Text, HorizontalAlignment.Left, -1, 28).X;
+            }
+
+            if (li + 1 < lines.Length)
+            {
+                DrawString(font, new Vector2(40, lyricY + 34), lines[li + 1].Lyrics, HorizontalAlignment.Left, size.X - 80, 22, new Color(0.55f, 0.57f, 0.62f));
+            }
+
+            DrawString(font, new Vector2(40, size.Y - 22), "Sing into the mic · Esc = song list", HorizontalAlignment.Left, -1, 13, new Color(0.6f, 0.6f, 0.65f));
         }
 
         public override void _UnhandledInput(InputEvent @event)
         {
             if (@event is InputEventKey { Pressed: true, Keycode: Key.Escape })
             {
-                GetTree().Quit();
+                GetTree().ChangeSceneToFile("res://SongSelect.tscn");
             }
         }
     }
