@@ -11,11 +11,13 @@
          consuming assembly so DllImport("PitchTracker") -> libPitchTracker.so resolves it.
          Conditional so the managed build still succeeds before the native lib is built
          (the pitch test then skips). -->
-    <Content Include="..\native\PitchTracker\libPitchTracker.so"
-             Condition="Exists('..\native\PitchTracker\libPitchTracker.so')"
-             Link="libPitchTracker.so">
+    <Content Include="..\native\PitchTracker\libPitchTracker.so" Condition="Exists('..\native\PitchTracker\libPitchTracker.so')" Link="libPitchTracker.so">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\VocaluxeCore\VocaluxeCore.csproj" />
   </ItemGroup>
 
 </Project>

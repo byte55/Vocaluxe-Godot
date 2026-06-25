@@ -15,23 +15,28 @@
 // along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
-namespace VocaluxeCore
+namespace VocaluxeAudio.Record
 {
-    /// <summary>
-    ///     Portable settings/constants for the core.
-    ///     (Originally these tone bounds lived on the app's CSettings and were reached via CBase.Settings.)
-    /// </summary>
-    public static class CSettings
+    public class CRecordDevice
     {
-        public const int ToneMin = -36;
-        public const int ToneMax = 89;
+        public readonly int Id;
+        public readonly string Name;
+        public readonly string Driver;
 
-        public const float DefaultMedleyFadeInTime = 8f;
-        public const float DefaultMedleyFadeOutTime = 2f;
+        public readonly int Channels;
 
-        public const int MaxScore = 10000;
-        public const int LinebonusScore = 1000;
+        /// <summary>
+        ///     Per-channel player assignment (1-based player number; 0 = channel unused).
+        /// </summary>
+        public int[] PlayerChannel;
 
-        public const int MaxNumPlayer = 6;
+        public CRecordDevice(int id, string name, string driver, int channels)
+        {
+            Id = id;
+            Name = name;
+            Driver = driver;
+            Channels = channels;
+            PlayerChannel = new int[channels];
+        }
     }
 }
