@@ -1,0 +1,21 @@
+# Godot 4 .NET
+.godot/
+/game/.godot/
+data/
+*.translation
+
+# .NET / C#
+bin/
+obj/
+*.user
+*.suo
+
+# Godot C# generated solution artifacts are kept (Vocaluxe.csproj, .sln),
+# but build output is not.
+mono_crash.*.json
+
+# OS / editor
+.DS_Store
+*.swp
+.idea/
+.vs/
