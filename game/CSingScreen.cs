@@ -56,6 +56,7 @@ namespace Vocaluxe
             CLog.ErrorSink = s => GD.PrintErr("[audio] " + s);
             CLog.WarningSink = s => GD.Print("[audio] " + s);
             CLog.Info("SingScreen start");
+            CRecordBase.DebugChannelLevels = true; // log raw per-channel mic peaks (~1/s) for debugging
 
             try
             {

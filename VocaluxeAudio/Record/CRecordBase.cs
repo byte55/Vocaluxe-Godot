@@ -18,7 +18,9 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using VocaluxeCore;
+using VocaluxeCore.Log;
 
 namespace VocaluxeAudio.Record
 {
@@ -32,6 +34,10 @@ namespace VocaluxeAudio.Record
         private bool _Initialized;
         protected List<CRecordDevice> _Devices;
         protected CBuffer[] _Buffer;
+
+        /// <summary>Set true to log per-channel raw input peaks (~1/s) for mic debugging.</summary>
+        public static bool DebugChannelLevels;
+        private int _DiagCount;
 
         /// <summary>
         ///     Init recording
@@ -103,6 +109,29 @@ namespace VocaluxeAudio.Record
                 {
                     allBuffers[(int)Math.Floor(j / (double)2)][i * 2 + j % 2] = data[i * doubleChannels + j];
                 }
+            }
+
+            if (DebugChannelLevels && (_DiagCount++ % 50) == 0)
+            {
+                var peaks = new float[totalChannels];
+                for (var ch = 0; ch < totalChannels; ch++)
+                {
+                    var b = allBuffers[ch];
+                    var mx = 0;
+                    for (var k = 0; k + 1 < b.Length; k += 2)
+                    {
+                        var s = (short)(b[k] | (b[k + 1] << 8));
+                        var a = Math.Abs((int)s);
+                        if (a > mx)
+                        {
+                            mx = a;
+                        }
+                    }
+
+                    peaks[ch] = mx / 32768f;
+                }
+
+                CLog.Debug($"'{device.Name}' rawPeak per channel=[{string.Join(", ", peaks.Select(p => p.ToString("0.000")))}] -> players=[{string.Join(",", device.PlayerChannel)}]");
             }
 
             for (var ch = 0; ch < totalChannels; ++ch)
