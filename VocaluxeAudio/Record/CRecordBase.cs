@@ -202,6 +202,15 @@ namespace VocaluxeAudio.Record
             _Buffer[player].VolTreshold = threshold;
         }
 
+        /// <summary>Software input gain (mic boost) for a player. 1 = unchanged.</summary>
+        public void SetGain(int player, float gain)
+        {
+            if (_Initialized)
+            {
+                _Buffer[player].Gain = gain;
+            }
+        }
+
         public bool ToneValid(int player)
         {
             return _Initialized && _Buffer[player].ToneValid;

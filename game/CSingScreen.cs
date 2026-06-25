@@ -22,6 +22,9 @@ namespace Vocaluxe
         /// <summary>Silence gate (0-1). Lower it if your mic is quiet and no tone shows up.</summary>
         [Export] public float VolumeThreshold = 0.02f;
 
+        /// <summary>Software mic boost. Raw ALSA capture is quiet; raise this if you must sing very loud.</summary>
+        [Export] public float MicGain = 8f;
+
         /// <summary>Manual audio/scoring sync offset in seconds (positive = notes later).</summary>
         [Export] public float AudioOffset = 0f;
 
@@ -111,12 +114,13 @@ namespace Vocaluxe
                         _MicName = dev.Name;
                         dev.PlayerChannel[0] = 1; // channel 0 -> player 1
                         _Record.SetVolumeThreshold(Player, VolumeThreshold);
+                        _Record.SetGain(Player, MicGain);
                         if (!_Record.Start())
                         {
                             _Error = "Mic stream failed to start (see [audio] log).";
                         }
 
-                        CLog.Info($"Capturing '{_MicName}' for player 1 (threshold {VolumeThreshold}).");
+                        CLog.Info($"Capturing '{_MicName}' for player 1 (threshold {VolumeThreshold}, gain {MicGain}).");
                     }
                     else
                     {
@@ -208,7 +212,7 @@ namespace Vocaluxe
             DrawString(font, new Vector2(20, 56), $"BPM {_Song.Bpm / 4:0.##}   Mic: {_MicName}   beat {_BeatF:0.0}", HorizontalAlignment.Left, -1, 14, new Color(0.7f, 0.7f, 0.75f));
             DrawString(font, new Vector2(size.X - 320, 30), $"Score {_Scorer?.Score.Points ?? 0:0}", HorizontalAlignment.Left, -1, 22, CColGolden);
             DrawString(font, new Vector2(size.X - 320, 56),
-                $"tone {(_PlayerToneValid ? _PlayerTone.ToString() : "-")}  vol {_MaxVol:0.000}  thr {VolumeThreshold:0.000}",
+                $"tone {(_PlayerToneValid ? _PlayerTone.ToString() : "-")}  vol {_MaxVol:0.000}  thr {VolumeThreshold:0.000}  gain {MicGain:0.#}",
                 HorizontalAlignment.Left, -1, 14, _PlayerToneValid ? CColPlayer : new Color(0.6f, 0.6f, 0.6f));
 
             if (_Error != null)

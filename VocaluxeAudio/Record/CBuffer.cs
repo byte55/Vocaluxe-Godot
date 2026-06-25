@@ -80,8 +80,34 @@ namespace VocaluxeAudio.Record
             }
         }
 
+        /// <summary>
+        ///     Software input gain (mic boost). PortAudio opens raw ALSA hw devices, bypassing the
+        ///     system mixer gain, so quiet mics need boosting here. 1 = unchanged.
+        /// </summary>
+        public float Gain = 1f;
+
         public void ProcessNewBuffer(byte[] buffer)
         {
+            if (Gain != 1f)
+            {
+                for (var i = 0; i + 1 < buffer.Length; i += 2)
+                {
+                    var s = (short)(buffer[i] | (buffer[i + 1] << 8));
+                    var v = (int)Math.Round(s * Gain);
+                    if (v > short.MaxValue)
+                    {
+                        v = short.MaxValue;
+                    }
+                    else if (v < short.MinValue)
+                    {
+                        v = short.MinValue;
+                    }
+
+                    buffer[i] = (byte)(v & 0xFF);
+                    buffer[i + 1] = (byte)((v >> 8) & 0xFF);
+                }
+            }
+
             _PitchTracker.Input(buffer);
         }
 
